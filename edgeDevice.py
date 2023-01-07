@@ -40,8 +40,8 @@ class EdgeDevice:
 
     def execution_time(self, task: Task) -> int:
         latency = ((task.task_size ** task.cycles_per_bit) * 1 / self.bus_speed) + (
-            (task.task_size ** task.cycles_per_bit) * 1 / self.process_rate
-        )
+            (task.task_size ** task.cyckes_per_bit) * 1 / self.process_rate
+        ) * task.cycles_per_bit
         latency_timestep = int(math.ceil(latency / 50))
         return latency_timestep
 
@@ -52,9 +52,7 @@ class EdgeDevice:
 
     def run(self, timestep):
         task = self.generate_task()
-        if task is None:
-            return None
-        else:
+        if task is not None:
             if self.policy(task):
                 # Offload
                 self.upload_queue.append(
@@ -107,10 +105,9 @@ class EdgeDevice:
         while len(self.process_queue) > 0:
             task = self.process_queue[0][0]
             latency = self.process_queue[0][2]
-            if (
-                latency + task.start_time <= timestep
-            ):  # Task is done if current_time >=start_time+time_needed
-                popped.append((self.process_queue[0][0], self.process_queue[0][2]))
+            popped.append((task, latency))
+            if latency + task.start_time <= timestep:
+                # Task is done if current_time >=start_time+time_needed
                 self.process_queue.pop(0)
             else:
                 break
