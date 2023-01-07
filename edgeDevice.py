@@ -83,7 +83,7 @@ class EdgeDevice:
             else:
                 break
             delay = latency
-        return popped  # This way we won't need an additional data structure in main.p to store the task until it's uploaded. We can just upload the tasks which have been uploaded before start of this time step. As we are checking for completion at start of each time step, we are sure to get all tasks that have completed uploading by the end of the last time step. We can just upload these tasks at this time step, in each time step.
+        return popped  # This way we won't need an additional data structure in main.py to store the task until it's uploaded. We can just upload the tasks which have been uploaded before start of this time step. As we are checking for completion at start of each time step, we are sure to get all tasks that have completed uploading by the end of the last time step. We can just upload these tasks at this time step, in each time step.
 
     def refresh_process_queue(self, timestep):
         delay = 0

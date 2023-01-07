@@ -29,8 +29,9 @@ while True:
             task
         ) in (
             popped
-        ):  # This way we won't need an additional data structure in main.p to store the task until it's uploaded
-            server.offload(task, time_step)
+        ):  # This way we won't need an additional data structure in main.py to store the task until it's uploaded
+            result = server.offload(task, time_step)
+            global_result.append(result)
         device.refresh_process_queue(
             time_step
         )  # same as server's refresh process queue
