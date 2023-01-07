@@ -25,24 +25,11 @@ while True:
         popped = device.refresh_upload_queue(
             time_step
         )  # remove tasks from device's upload queue that have been uploaded
-        for (
-            task
-        ) in (
-            popped
-        ):  # This way we won't need an additional data structure in main.py to store the task until it's uploaded
+        for task in popped:
+            # This way we won't need an additional data structure in main.py to store the task until it's uploaded
             result = server.offload(task, time_step)
             global_result.append(result)
-        device.refresh_process_queue(
-            time_step
-        )  # same as server's refresh process queue
-        # if random.uniform(0, 1) <= 0.95:  # generate task
-        #     new_task = device.generate(time_step)
-        #     offload_decision = device.decide(new_task)
-        #     if offload_decision:  # offload to server
-        #         device.push_to_upload_queue(new_task)
-        #     else:  # local execution
-        #         result = device.process(new_task)
-        #         global_result.append(result)
+        device.refresh_process_queue(time_step)
         device.run(time_step)
 
 
