@@ -18,16 +18,17 @@ class MECServer:
     def execution_time(self, task):
         latency = (task.task_size / self.STORAGE_RATE) + (
             task.task_size / self.CLOCK_CYCLES
-        ) ** task.cycles_per_bit
-        return math.ceil((latency / 50))
+        ) * task.cycles_per_bit
+        return math.ceil((latency / 500))
 
     def refresh_process_queue(self, time_step):
-        popped_tasks = list()
+        popped_tasks = []
         while len(self.process_queue) > 0:
             task = self.process_queue[0][0]
             latency = self.process_queue[0][2]
             if latency + task.start_time <= time_step:
-                popped_tasks.append(self.process_queue.pop(0))
+                popped_tasks.append((task, latency))
+                self.process_queue.pop(0)
             else:
                 break
         return popped_tasks
