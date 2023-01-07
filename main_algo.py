@@ -1,6 +1,6 @@
 # ALGORITHM FOR main.py
 from server import Server
-from device import Device
+from edgeDevice import EdgeDevice
 import random
 
 NUMBER_OF_MOBILE_DEVICES = 1
@@ -12,7 +12,7 @@ time_step = 0
 devices = []
 for _ in range(0, NUMBER_OF_MOBILE_DEVICES):
     params = ()
-    devices.append(Device(params))
+    devices.append(EdgeDevice(params))
 server = Server()
 # initialise server and devices
 
@@ -22,9 +22,15 @@ while True:
         time_step
     )  # remove tasks from server's process queue that have been processed
     for device in devices:
-        device.refresh_upload_queue(
+        popped = device.refresh_upload_queue(
             time_step
         )  # remove tasks from device's upload queue that have been uploaded
+        for (
+            task
+        ) in (
+            popped
+        ):  # This way we won't need an additional data structure in main.p to store the task until it's uploaded
+            server.offload(task, time_step)
         device.refresh_process_queue(
             time_step
         )  # same as server's refresh process queue
@@ -32,12 +38,7 @@ while True:
             new_task = device.generate(time_step)
             offload_decision = device.decide(new_task)
             if offload_decision:  # offload to server
-                upload_latency = device.compute_latency(new_task)
-                time_to_offload_new_task = time_step + upload_latency
-                if time_to_offload_new_task in offload_dictionary:
-                    offload_dictionary[time_to_offload_new_task].append(new_task)
-                else:
-                    offload_dictionary[time_to_offload_new_task] = [new_task]
+                device.push_to_upload_queue(new_task)
             else:  # local execution
                 result = device.process(new_task)
                 global_result.append(result)

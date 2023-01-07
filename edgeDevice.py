@@ -3,12 +3,13 @@ from numpy import random
 
 
 class Task:
-    def __init__(self, task_size, timeout, cycles_per_bit):
+    def __init__(self, task_size, timeout, cycles_per_bit, start_time):
         self.task_size = task_size  # Number of bits
         self.task_timeout = timeout  # Deadline for the task to complete
         self.cycles_per_bit = (
             cycles_per_bit  # Algorithmic complexity => Eg: 2 -> n^2 time complexity
         )
+        self.start_time = start_time
 
 
 class EdgeDevice:
@@ -20,7 +21,7 @@ class EdgeDevice:
         self.upload_queue = []
         self.process_queue = []
 
-    def generate_task(self):
+    def generate_task(self, start_time):
         prob = random.choice(a=[0, 1], p=[0.2, 0.8])
         if prob == 1:
             task_size = random.randint(
@@ -30,7 +31,7 @@ class EdgeDevice:
                 random.normal(loc=10, scale=4)
             )  # mean = 500ms, std deviation = 300ms => 1 time step = 50ms
             cycles_per_bit = random.randint(1, 4)
-            return Task(task_size, task_timeout, cycles_per_bit)
+            return Task(task_size, task_timeout, cycles_per_bit, start_time)
         else:
             return None
 
@@ -71,22 +72,31 @@ class EdgeDevice:
 
     def refresh_upload_queue(self, timestep):
         delay = 0
+        popped = []
         while len(self.upload_queue) > 0:
             task = self.upload_queue[0]
             latency = delay + self.upload_time(task)
-            if latency <= timestep:
-                self.upload_queue.pop(0)
+            if (
+                latency + task.start_time <= timestep
+            ):  # Task is done if current_time >=start_time+time_needed
+                popped.append(self.upload_queue.pop(0))
             else:
                 break
             delay = latency
+        return popped  # This way we won't need an additional data structure in main.p to store the task until it's uploaded. We can just upload the tasks which have been uploaded before start of this time step. As we are checking for completion at start of each time step, we are sure to get all tasks that have completed uploading by the end of the last time step. We can just upload these tasks at this time step, in each time step.
 
     def refresh_process_queue(self, timestep):
         delay = 0
         while len(self.process_queue) > 0:
             task = self.process_queue[0]
             latency = delay + self.execution_time(task)
-            if latency <= timestep:
+            if (
+                latency + task.start_time <= timestep
+            ):  # Task is done if current_time >=start_time+time_needed
                 self.process_queue.pop(0)
             else:
                 break
             delay = latency
+
+    def push_to_upload_queue(self, task):
+        self.upload_queue.append(task)
