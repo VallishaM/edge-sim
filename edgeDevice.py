@@ -13,10 +13,9 @@ class Task:
 
 
 class EdgeDevice:
-    def __init__(self, uplink_speed, process_rate, ram, bus_speed):
+    def __init__(self, uplink_speed, process_rate, bus_speed):
         self.uplink_speed = uplink_speed  # Uplink bandwidth speed
         self.process_rate = process_rate  # No. of bits that can be processed in 1ms
-        self.ram = ram  # Ram size
         self.bus_speed = bus_speed  # Transfer speed from secondary storage to ram in megabits per sec
         self.upload_queue = []
         self.process_queue = []
@@ -27,7 +26,7 @@ class EdgeDevice:
             task_size = random.randint(
                 32 * 8, 4 * 1024 * 8
             )  # 32 megabits to 4 gigabits
-            task_timeout = math.round(
+            task_timeout = round(
                 random.normal(loc=10, scale=4)
             )  # mean = 500ms, std deviation = 300ms => 1 time step = 50ms
             cycles_per_bit = random.randint(1, 4)
@@ -51,13 +50,14 @@ class EdgeDevice:
         return upload_timestep
 
     def run(self, timestep):
-        task = self.generate_task()
+        task = self.generate_task(timestep)
         if task is not None:
             if self.policy(task):
                 # Offload
                 self.upload_queue.append(
                     (task, timestep, self.upload_time(task) + self.compute_delay("U"))
                 )
+                return 0
             else:
                 # Do not offload
                 delay_timestep = 0
@@ -73,6 +73,12 @@ class EdgeDevice:
                             self.execution_time(task) + self.compute_delay("P"),
                         )
                     )
+                    return 0
+                else:
+                    # Drop task
+                    return -1
+        else:
+            return 0
 
     def compute_delay(self, which_queue):
         queue = []
@@ -91,7 +97,7 @@ class EdgeDevice:
         popped = []
         while len(self.upload_queue) > 0:
             task = self.upload_queue[0][0]
-            latency = self.upload_queue[0][3]  # delay + self.upload_time(task)
+            latency = self.upload_queue[0][2]  # delay + self.upload_time(task)
             if (
                 latency + task.start_time <= timestep
             ):  # Task is done if current_time >=start_time+time_needed
