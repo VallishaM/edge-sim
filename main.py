@@ -1,5 +1,5 @@
 # ALGORITHM FOR main.py
-from server import Server
+from server import MECServer
 from edgeDevice import EdgeDevice
 import random
 
@@ -13,7 +13,7 @@ devices = []
 for _ in range(0, NUMBER_OF_MOBILE_DEVICES):
     params = ()
     devices.append(EdgeDevice(params))
-server = Server()
+server = MECServer()
 # initialise server and devices
 
 while True:
