@@ -19,18 +19,15 @@ class MECServer:
         return math.ceil((latency/50))
 
     def refresh_process_queue(self,time_step):
-        # delay = 0
+        popped_tasks = list()
         while len(self.process_queue) > 0:
             task = self.process_queue[0][0]
             latency = self.process_queue[0][2]
-            # delay += self.execution_time(self.process_queue[0])
             if latency + task.start_time <= time_step:
-                self.process_queue.pop(0)
+                popped_tasks.append(self.process_queue.pop(0))
             else:
                 break
-    
-    # def run(self,newTask,time):
-
+        return popped_tasks
 
     def compute_delay(self):
         latency = 0
@@ -40,9 +37,10 @@ class MECServer:
     
     def put_in_queue(self,newTask,timestep):
         total_time = self.execution_time(newTask)+self.compute_delay()
-        if total_time <= newTask.timeout:
+        if total_time + timestep <= newTask.start_time + newTask.timeout:
             self.process_queue.append((
                 newTask,
                 timestep,
                 total_time
                 ))
+            
