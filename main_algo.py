@@ -35,13 +35,15 @@ while True:
         device.refresh_process_queue(
             time_step
         )  # same as server's refresh process queue
-        if random.uniform(0, 1) <= 0.95:  # generate task
-            new_task = device.generate(time_step)
-            offload_decision = device.decide(new_task)
-            if offload_decision:  # offload to server
-                device.push_to_upload_queue(new_task)
-            else:  # local execution
-                result = device.process(new_task)
-                global_result.append(result)
+        # if random.uniform(0, 1) <= 0.95:  # generate task
+        #     new_task = device.generate(time_step)
+        #     offload_decision = device.decide(new_task)
+        #     if offload_decision:  # offload to server
+        #         device.push_to_upload_queue(new_task)
+        #     else:  # local execution
+        #         result = device.process(new_task)
+        #         global_result.append(result)
+        device.run(time_step)
+
 
 # Display the compiled results
