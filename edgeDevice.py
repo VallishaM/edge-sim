@@ -37,7 +37,8 @@ class EdgeDevice:
             return None
 
     def policy(self, task: Task) -> bool:
-        return True
+        prob = random.choice(a=[0, 1])
+        return True if prob >= 0.5 else False
 
     def execution_time(self, task: Task) -> int:
         latency = (task.task_size * 1 / self.bus_speed) + (
@@ -62,19 +63,10 @@ class EdgeDevice:
                 return 0
             else:
                 # Do not offload
-                delay_timestep = 0
-                for (t, timestep) in self.process_queue:
-                    delay_timestep += self.execution_time(t)
-                latency_timestep = delay_timestep + self.execution_time(task)
+                compute_latency = self.execution_time(task) + self.compute_delay("P")
                 # Drop the task if task will not get executed within timeout
-                if latency_timestep - timestep <= task.task_timeout:
-                    self.process_queue.append(
-                        (
-                            task,
-                            timestep,
-                            self.execution_time(task) + self.compute_delay("P"),
-                        )
-                    )
+                if compute_latency + timestep <= task.start_time + task.task_timeout:
+                    self.process_queue.append((task, timestep, compute_latency,))
                     return 0
                 else:
                     # Drop task
@@ -86,14 +78,12 @@ class EdgeDevice:
         queue = []
         if which_queue == "P":
             queue = self.process_queue
+            return queue[-1][2] if len(queue) > 0 else 0
         elif which_queue == "U":
             queue = self.upload_queue
+            return queue[-1][0].upload_latency if len(queue) > 0 else 0
         else:
             return None
-        delay = 0
-        for t in queue:
-            delay += t[0].upload_latency
-        return delay
 
     def refresh_upload_queue(self, timestep):
         popped = []
