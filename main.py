@@ -33,6 +33,7 @@ global_task_drop_rate = []
 global_reward_sum = []
 global_generated = []
 global_dropped = []
+global_running = []
 prev_state = [0, 0, 0, 0]
 prev_reward = 0
 prev_action = 0
@@ -156,7 +157,17 @@ while True:
 
     tasks_dropped += drop
     tasks_generated += new_tasks
-
+    try:
+        global_running.append(
+            sum(global_dropped[max(0, len(global_dropped) - 30) : len(global_dropped)])
+            / sum(
+                global_generated[
+                    max(0, len(global_generated) - 30) : len(global_generated)
+                ]
+            )
+        )
+    except:
+        global_running.append(0)
     if tasks_generated > 0:
         print(
             "Total Tasks : ",
@@ -175,7 +186,7 @@ while True:
         )
     global_task_drop_rate.append(prev_reward)
     global_reward_sum.append(sum(global_task_drop_rate))
-    plot(global_reward_sum)
+    plot(global_reward_sum, global_running)
 
     time_step += 1
 

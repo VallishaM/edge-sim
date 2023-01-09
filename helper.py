@@ -4,9 +4,10 @@ from IPython import display
 plt.ion()
 
 
-def plot(global_task_drop_rate):
+def plot(global_task_drop_rate, global_running):
     display.clear_output(wait=True)
     display.display(plt.gcf())
+    plt.figure(1)
     plt.clf()
     plt.title("Training...")
     plt.xlabel("Time step")
@@ -20,6 +21,25 @@ def plot(global_task_drop_rate):
         len(global_task_drop_rate) - 1,
         global_task_drop_rate[-1],
         str(global_task_drop_rate[-1]),
+    )
+
+    plt.show(block=False)
+    plt.pause(0.1)
+
+    plt.figure(2)
+    plt.clf()
+    plt.title("Training...")
+    plt.xlabel("Time step")
+    plt.ylabel("Running Drop Rate")
+    # plt.plot(global_latency, color="y", label="Total Latency")
+    plt.plot(global_running, color="b", label="Running Drop Rate")
+
+    plt.legend(loc="upper left")
+    # plt.text(len(global_latency) - 1, global_latency[-1], str(global_latency[-1]))
+    plt.text(
+        len(global_running) - 1,
+        global_running[-1],
+        str(global_running[-1]),
     )
 
     plt.show(block=False)
