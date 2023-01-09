@@ -4,10 +4,10 @@ import math
 class MECServer:
     def __init__(self):
         # primary storage capacity, secondary storage capacity, latency from secondary storage to primary, processor clock cycle
-        self.CLOCK_CYCLES = 3200000  # clockcycle in ms. Processing
+        self.CLOCK_CYCLES = 0.1 * 10**9  # 41.8ghz
         self.STORAGE_SIZE = 15360000000000 * 8  # 15.36 TB
         self.MEMORY_SIZE = 64000000000 * 8
-        self.STORAGE_RATE = 1600000000 * 8  # 256
+        self.STORAGE_RATE = 1600000 * 8  # 1.6GBps
         self.time = 0
         # self.process_queue = {
         #     # Key=UUID
@@ -16,10 +16,14 @@ class MECServer:
         self.process_queue = list()
 
     def execution_time(self, task):
-        latency = (task.task_size / self.STORAGE_RATE) + (
-            task.task_size / self.CLOCK_CYCLES
-        ) * task.cycles_per_bit
-        return math.ceil((latency / 500))
+        # latency = (task.task_size / self.STORAGE_RATE) +
+        # (
+        #     task.task_size / self.CLOCK_CYCLES
+        # ) * task.cycles_per_bit
+        latency = (task.task_size * 1000 / self.STORAGE_RATE) + (
+            task.task_size * task.cycles_per_bit * 1000
+        ) / self.CLOCK_CYCLES
+        return math.ceil((latency / 100))
 
     def refresh_process_queue(self, time_step):
         popped_tasks = []
@@ -35,15 +39,18 @@ class MECServer:
 
     def compute_delay(self):
         latency = 0
-        for element in self.process_queue:
-            latency += element[2]  # Keeps the latency of each task in it
+        for task_tuple in self.process_queue:
+            latency += task_tuple[2]
+
         return latency
 
     def offload(self, newTask, timestep):
-        total_time = self.execution_time(newTask) + self.compute_delay()
+        execution_time = self.execution_time(newTask)
+        delay_time = self.compute_delay()
+        total_time = execution_time + delay_time
         if total_time + timestep <= newTask.start_time + newTask.task_timeout:
-            self.process_queue.append((newTask, timestep, total_time))
-            return 0
+            self.process_queue.append((newTask, timestep, execution_time))
+            return (False, total_time)  # (Drop?,latency)
         else:
             # Drop task
-            return -1
+            return (True, 0)
