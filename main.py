@@ -31,10 +31,12 @@ global_process_latency = []
 global_local_latency = []
 global_task_drop_rate = []
 global_reward_sum = []
+global_generated = []
+global_dropped = []
 prev_state = [0, 0, 0, 0]
 prev_reward = 0
 prev_action = 0
-while time_step < 10000:
+while True:
     time_array.append(time_step)
     new_tasks = 0
     drop = 0
@@ -49,10 +51,11 @@ while time_step < 10000:
         )  # remove tasks from device's upload queue that have been uploaded
 
         device.refresh_process_queue(time_step)
-        if time_step < 10000:
+        if True:
 
             result = device.poll(time_step)
             if result[0]:  # If task generated
+                global_generated.append(1)
                 new_tasks += 1
                 agent.update(
                     np.array(prev_state, dtype=int),
@@ -79,6 +82,7 @@ while time_step < 10000:
                     if server_result[0]:  #  drop
                         drop += 1
                         prev_reward = -1
+                        global_dropped.append(1)
                         print(
                             "Offload and drop, energy:",
                             (result[2].upload_latency + server_result[1])
@@ -90,6 +94,7 @@ while time_step < 10000:
                         )
                     else:  # Successfully processable
                         prev_reward = 1
+                        global_dropped.append(0)
                         print(
                             "Offload",
                             server_result[1] + result[2].upload_latency,
@@ -106,12 +111,14 @@ while time_step < 10000:
                     global_local_latency.append(result[4])
                     if result[3]:  # Droop
                         drop += 1
+                        global_dropped.append(1)
                         print(
                             "Local and drop, energy:", result[2] * 350 * 0.05
                         )  # in milli Joule
                         prev_reward = -1
                     else:
                         prev_reward = 1
+                        global_dropped.append(0)
                         print(
                             "Local : ", result[2], "energy : ", result[2] * 0.05 * 350
                         )
@@ -135,6 +142,7 @@ while time_step < 10000:
                     round(drop / new_tasks, 4),
                 )
             else:
+                global_dropped.append(0)
                 print("No task generated")
                 if len(global_latency) > 0:
                     global_latency.append(global_latency[-1])
@@ -157,6 +165,13 @@ while time_step < 10000:
             tasks_dropped,
             "Rate : ",
             round(tasks_dropped / tasks_generated, 4),
+            "Running Rate = ",
+            sum(global_dropped[max(0, len(global_dropped) - 30) : len(global_dropped)])
+            / sum(
+                global_generated[
+                    max(0, len(global_generated) - 30) : len(global_generated)
+                ]
+            ),
         )
     global_task_drop_rate.append(prev_reward)
     global_reward_sum.append(sum(global_task_drop_rate))
