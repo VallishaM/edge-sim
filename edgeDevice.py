@@ -14,13 +14,15 @@ class Task:
 
 
 class EdgeDevice:
-    def __init__(self, uplink_speed, clock_rate, bus_speed):
+    def __init__(self, uplink_speed, clock_rate, bus_speed, agent, server):
         self.uplink_speed = uplink_speed  # Uplink bandwidth speed
         self.clock_rate = clock_rate  # No. of bits that can be processed in 1ms
         self.bus_speed = bus_speed  # Transfer speed from secondary storage to ram in megabits per sec
         self.upload_queue = []
         self.process_queue = []
         self.num_of_tasks = 0
+        self.agent = agent
+        self.server = server
 
     def generate_task(self, start_time):
         prob = random.choice(a=[0, 1], p=[0.7, 0.3])
@@ -37,8 +39,11 @@ class EdgeDevice:
             return None
 
     def policy(self, task: Task) -> bool:
-        prob = random.choice(a=[0, 1])
-        return True if prob >= 0.5 else False
+
+        state = self.get_state(task)
+        decision = self.agent.get_action(state)
+
+        return (True, state) if decision == 1 else (False, state)
 
     def execution_time(self, task: Task) -> int:
         latency = (task.task_size * 1 / self.bus_speed) * 1000 + (
@@ -53,11 +58,19 @@ class EdgeDevice:
 
         return upload_timestep
 
+    def get_state(self, task):
+        upload = self.compute_delay("U")
+        server = self.server.compute_delay()
+        process_local = self.compute_delay("P")
+        state = [task.task_size, task.cycles_per_bit, upload + server, process_local]
+        return state
+
     def poll(self, timestep):
         task = self.generate_task(timestep)
         if task is not None:
             self.num_of_tasks += 1
-            if self.policy(task):
+            policy = self.policy(task)
+            if policy[0]:
                 # Offload
                 task.upload_latency = self.upload_time(task) + self.compute_delay("U")
                 self.upload_queue.append((task, timestep, self.upload_time(task)))
@@ -66,6 +79,8 @@ class EdgeDevice:
                     True,
                     task,
                     False,
+                    0,
+                    policy[1],
                 )  # (Generated?,Offload?,Latency,Dropout?)
             else:
                 # Do not offload
@@ -85,18 +100,13 @@ class EdgeDevice:
                         compute_latency,
                         False,
                         self.execution_time(task),
+                        policy[1],
                     )  # (generated?,offloaded?,latency,dropped?,process time)
                 else:
                     # Drop task
-                    return (
-                        True,
-                        False,
-                        compute_latency,
-                        True,
-                        0,
-                    )
+                    return (True, False, compute_latency, True, 0, policy[1])
         else:
-            return (False, False, -2, False)
+            return (False, False, -2, False, None)
 
     def compute_delay(self, which_queue):
         queue = []

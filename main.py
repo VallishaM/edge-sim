@@ -2,18 +2,24 @@
 from server import MECServer
 from edgeDevice import EdgeDevice
 from helper import plot, plot_single
+from agent import Agent
+from copy import deepcopy
+import numpy as np
 
 # from tabulate import tabulate
 
 NUMBER_OF_MOBILE_DEVICES = 1
 offload_dictionary = {}
 global_result = []
-
+agent = Agent()
 # initialise server and devices
+server = MECServer()
 devices = []
 for _ in range(0, NUMBER_OF_MOBILE_DEVICES):
-    devices.append(EdgeDevice(14 * 10**3, 2.5 * 10**6, 4200 * 8 * (10**3)))
-server = MECServer()
+    devices.append(
+        EdgeDevice(14 * 10**3, 2.5 * 10**6, 4200 * 8 * (10**3), agent, server)
+    )
+
 # initialise server and devices
 tasks_generated = 0
 time_step = 0
@@ -23,6 +29,11 @@ time_array = []
 global_upload_latency = []
 global_process_latency = []
 global_local_latency = []
+global_task_drop_rate = []
+global_reward_sum = []
+prev_state = [0, 0, 0, 0]
+prev_reward = 0
+prev_action = 0
 while time_step < 10000:
     time_array.append(time_step)
     new_tasks = 0
@@ -43,8 +54,16 @@ while time_step < 10000:
             result = device.poll(time_step)
             if result[0]:  # If task generated
                 new_tasks += 1
+                agent.update(
+                    np.array(prev_state, dtype=int),
+                    prev_action,
+                    prev_reward,
+                    np.array(result[5], dtype=int),
+                )
+                prev_state = deepcopy(result[5])
                 if result[1]:  # If Offload
                     # print(result)
+                    prev_action = 1
                     global_upload_latency.append(result[2].upload_latency)
                     server_result = server.offload(
                         result[2], result[2].upload_latency + time_step
@@ -59,7 +78,7 @@ while time_step < 10000:
                     global_latency.append(server_result[1] + result[2].upload_latency)
                     if server_result[0]:  #  drop
                         drop += 1
-
+                        prev_reward = -1
                         print(
                             "Offload and drop, energy:",
                             (result[2].upload_latency + server_result[1])
@@ -70,7 +89,7 @@ while time_step < 10000:
                             result[2].upload_latency,
                         )
                     else:  # Successfully processable
-
+                        prev_reward = 1
                         print(
                             "Offload",
                             server_result[1] + result[2].upload_latency,
@@ -81,6 +100,7 @@ while time_step < 10000:
                         )
                     # plot(global_latency, global_upload_latency, global_process_latency)
                 else:  # if not offload
+                    prev_action = 0
                     new_latency += result[2]
                     global_latency.append(result[2])
                     global_local_latency.append(result[4])
@@ -89,7 +109,9 @@ while time_step < 10000:
                         print(
                             "Local and drop, energy:", result[2] * 350 * 0.05
                         )  # in milli Joule
+                        prev_reward = -1
                     else:
+                        prev_reward = 1
                         print(
                             "Local : ", result[2], "energy : ", result[2] * 0.05 * 350
                         )
@@ -101,12 +123,7 @@ while time_step < 10000:
                         else:
                             global_upload_latency.append(0)
                             global_process_latency.append(0)
-                    plot(
-                        global_latency,
-                        global_upload_latency,
-                        global_process_latency,
-                        global_local_latency,
-                    )
+
                 print(
                     "New Latency : ",
                     new_latency,
@@ -141,6 +158,9 @@ while time_step < 10000:
             "Rate : ",
             round(tasks_dropped / tasks_generated, 4),
         )
+    global_task_drop_rate.append(prev_reward)
+    global_reward_sum.append(sum(global_task_drop_rate))
+    plot(global_reward_sum)
 
     time_step += 1
 
