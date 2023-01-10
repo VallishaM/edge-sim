@@ -4,7 +4,9 @@ from IPython import display
 plt.ion()
 
 
-def plot(global_task_drop_rate, global_running, global_energy_running):
+def plot(
+    global_task_drop_rate, global_running, global_energy_running, global_latency_running
+):
     display.clear_output(wait=True)
     display.display(plt.gcf())
     plt.figure(1)
@@ -59,6 +61,25 @@ def plot(global_task_drop_rate, global_running, global_energy_running):
         len(global_energy_running) - 1,
         global_energy_running[-1],
         str(global_energy_running[-1]),
+    )
+
+    plt.show(block=False)
+    plt.pause(0.1)
+
+    plt.figure(4)
+    plt.clf()
+    plt.title("Training...")
+    plt.xlabel("Time step")
+    plt.ylabel("Running Latency")
+    # plt.plot(global_latency, color="y", label="Total Latency")
+    plt.plot(global_latency_running, color="b", label="Running Latency")
+
+    plt.legend(loc="upper left")
+
+    plt.text(
+        len(global_latency_running) - 1,
+        global_latency_running[-1],
+        str(global_latency_running[-1]),
     )
 
     plt.show(block=False)

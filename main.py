@@ -28,6 +28,7 @@ time_step = 0
 tasks_dropped = 0
 global_latency = []
 time_array = []
+global_latency_running = []
 global_upload_latency = []
 global_process_latency = []
 global_local_latency = []
@@ -179,6 +180,7 @@ while time_step < 1000:
                     global_running.append(0)
                 if len(global_energy) == 0:
                     global_energy_running.append(0)
+                    global_latency_running.append(0)
                 else:
                     global_energy_running.append(
                         sum(
@@ -187,22 +189,25 @@ while time_step < 1000:
                             ]
                         )
                     )
+                    global_latency_running.append(
+                        sum(
+                            global_energy[
+                                max(0, len(global_latency_running) - 30) : len(
+                                    global_latency_running
+                                )
+                            ]
+                        )
+                    )
                 global_task_drop_rate.append(prev_reward)
                 global_reward_sum.append(sum(global_task_drop_rate))
-                # plot(global_reward_sum, global_running, global_energy_running)
+                plot(
+                    global_reward_sum,
+                    global_running,
+                    global_energy_running,
+                    global_latency_running,
+                )
             else:
                 global_dropped.append(0)
-                print("No task generated")
-                if len(global_latency) > 0:
-                    global_latency.append(global_latency[-1])
-                    global_upload_latency.append(global_upload_latency[-1])
-                    global_process_latency.append(global_process_latency[-1])
-                    global_local_latency.append(global_local_latency[-1])
-
-                else:
-                    global_local_latency.append(0)
-                    global_upload_latency.append(0)
-                    global_process_latency.append(0)
 
     tasks_dropped += drop
     tasks_generated += new_tasks
