@@ -25,7 +25,7 @@ class EdgeDevice:
         self.server = server
 
     def generate_task(self, start_time):
-        prob = random.choice(a=[0, 1], p=[0.7, 0.3])
+        prob = random.choice(a=[0, 1], p=[0.5, 0.5])
         if prob == 1:
             task_size = (
                 random.randint(30, 80) * 10**6 / 10
@@ -42,7 +42,7 @@ class EdgeDevice:
 
         state = self.get_state(task)
         decision = self.agent.get_action(state)
-
+        # d = [True, False]
         return (True, state) if decision == 1 else (False, state)
 
     def execution_time(self, task: Task) -> int:

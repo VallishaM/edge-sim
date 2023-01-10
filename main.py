@@ -5,7 +5,10 @@ from helper import plot, plot_single
 from agent import Agent
 from copy import deepcopy
 import numpy as np
+import random
 
+random.seed(20)
+np.random.seed(20)
 # from tabulate import tabulate
 
 NUMBER_OF_MOBILE_DEVICES = 1
@@ -34,6 +37,8 @@ global_reward_sum = []
 global_generated = []
 global_dropped = []
 global_running = []
+global_energy = []
+global_energy_running = []
 prev_state = [0, 0, 0, 0]
 prev_reward = 0
 prev_action = 0
@@ -93,6 +98,12 @@ while True:
                             "Upload latency",
                             result[2].upload_latency,
                         )
+                        global_energy.append(
+                            (result[2].upload_latency + server_result[1])
+                            * 0.05
+                            * 0.001
+                            * 6.87
+                        )
                     else:  # Successfully processable
                         prev_reward = 1
                         global_dropped.append(0)
@@ -103,6 +114,9 @@ while True:
                             (server_result[1] + result[2].upload_latency) * 0.05 * 6.87,
                             "Upload latency",
                             result[2].upload_latency,
+                        )
+                        global_energy.append(
+                            (server_result[1] + result[2].upload_latency) * 0.05 * 6.87
                         )
                     # plot(global_latency, global_upload_latency, global_process_latency)
                 else:  # if not offload
@@ -116,6 +130,7 @@ while True:
                         print(
                             "Local and drop, energy:", result[2] * 350 * 0.05
                         )  # in milli Joule
+                        global_energy.append(result[2] * 350 * 0.05)
                         prev_reward = -1
                     else:
                         prev_reward = 1
@@ -123,6 +138,7 @@ while True:
                         print(
                             "Local : ", result[2], "energy : ", result[2] * 0.05 * 350
                         )
+                        global_energy.append(result[2] * 0.05 * 350)
 
                     if len(global_latency) > 0:
                         if len(global_process_latency) > 0:
@@ -150,6 +166,7 @@ while True:
                     global_upload_latency.append(global_upload_latency[-1])
                     global_process_latency.append(global_process_latency[-1])
                     global_local_latency.append(global_local_latency[-1])
+
                 else:
                     global_local_latency.append(0)
                     global_upload_latency.append(0)
@@ -158,6 +175,7 @@ while True:
     tasks_dropped += drop
     tasks_generated += new_tasks
     try:
+
         global_running.append(
             sum(global_dropped[max(0, len(global_dropped) - 30) : len(global_dropped)])
             / sum(
@@ -166,6 +184,7 @@ while True:
                 ]
             )
         )
+
     except:
         global_running.append(0)
     if tasks_generated > 0:
@@ -184,9 +203,15 @@ while True:
                 ]
             ),
         )
+    if len(global_energy) == 0:
+        global_energy_running.append(0)
+    else:
+        global_energy_running.append(
+            sum(global_energy[max(0, len(global_energy) - 30) : len(global_energy)])
+        )
     global_task_drop_rate.append(prev_reward)
     global_reward_sum.append(sum(global_task_drop_rate))
-    plot(global_reward_sum, global_running)
+    plot(global_reward_sum, global_running, global_energy_running)
 
     time_step += 1
 
