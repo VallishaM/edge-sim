@@ -25,23 +25,20 @@ class EdgeDevice:
         self.server = server
 
     def generate_task(self, start_time):
-        prob = random.choice(a=[0, 1], p=[0.5, 0.5])
+        prob = random.choice(a=[0, 1], p=[0.7, 0.3])
         if prob == 1:
-            task_size = (
-                random.randint(30, 80) * 10**6 / 10
-            )  # 20 megabits to 50 megabits
-            task_timeout = round(
-                random.normal(loc=10, scale=2) * 2
-            )  # mean = 500ms, std deviation = 300ms => 1 time step = 500ms
+            task_size = random.randint(30, 80) * 10**5  # 20 megabits to 50 megabits
+            task_timeout = random.randint(16, 24)
+
             cycles_per_bit = random.randint(28, 32) / 100
             return Task(task_size, task_timeout, cycles_per_bit, start_time)
         else:
             return None
 
-    def policy(self, task: Task) -> bool:
+    def policy(self, task: Task, t) -> bool:
 
         state = self.get_state(task)
-        decision = self.agent.get_action(state)
+        decision = self.agent.get_action(state, t)
         # d = [True, False]
         return (True, state) if decision == 1 else (False, state)
 
@@ -60,16 +57,20 @@ class EdgeDevice:
 
     def get_state(self, task):
         upload = self.compute_delay("U")
-        server = self.server.compute_delay()
-        process_local = self.compute_delay("P")
-        state = [task.task_size, task.cycles_per_bit, upload + server, process_local]
+        server = self.server.compute_delay() + self.server.execution_time(task)
+        process_local = self.compute_delay("P") + self.execution_time(task)
+        state = [
+            round(task.task_size / 10**6) - 3,
+            round((task.task_timeout - 16) / 2),
+        ]
+
         return state
 
     def poll(self, timestep):
         task = self.generate_task(timestep)
         if task is not None:
             self.num_of_tasks += 1
-            policy = self.policy(task)
+            policy = self.policy(task, timestep)
             if policy[0]:
                 # Offload
                 task.upload_latency = self.upload_time(task) + self.compute_delay("U")

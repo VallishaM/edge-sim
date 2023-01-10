@@ -8,13 +8,13 @@ import os
 class Linear_QNet(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
-        self.linear1 = nn.Linear(input_size, hidden_size)
-        self.linear2 = nn.Linear(hidden_size, output_size)
+        self.linear1 = nn.Linear(4, 256)
+        self.linear2 = nn.Linear(256, 2)
 
     def forward(self, x):
         x = F.relu(self.linear1(x))
         x = self.linear2(x)
-
+        print("x=", x)
         return x
 
     def save(self, file_name="model.pth"):
@@ -31,14 +31,15 @@ class QTrainer:
         self.gamma = gamma
         self.lr = lr
         self.optimiser = optim.Adam(model.parameters(), lr=self.lr)
-        self.criterion = nn.MSELoss()
+        self.criterion = nn.L1Loss()
 
     def train_step(self, state, action, reward, next_state):
+
         state = torch.tensor(state, dtype=torch.float)
         action = torch.tensor(action, dtype=torch.long)
         reward = torch.tensor(reward, dtype=torch.float)
         next_state = torch.tensor(next_state, dtype=torch.float)
-
+        print(state, action, reward, next_state)
         if len(state.shape) == 1:
             # (1,x)
             state = torch.unsqueeze(state, 0)
@@ -51,6 +52,7 @@ class QTrainer:
         target = pred.clone()
         for idx in range(len(target)):
             Q_new = reward[idx]
+            print("Q_new : ", Q_new)
             target[idx][torch.argmax(action[idx]).item()] = Q_new
 
         # 2: Q_newr=+y*max(next_predicted Q value) -> only do this if not done

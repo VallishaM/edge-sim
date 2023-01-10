@@ -24,7 +24,7 @@ def plot(global_task_drop_rate, global_running, global_energy_running):
     )
 
     plt.show(block=False)
-    # plt.pause(0.1)
+    plt.pause(0.1)
 
     plt.figure(2)
     plt.clf()
@@ -62,7 +62,7 @@ def plot(global_task_drop_rate, global_running, global_energy_running):
     )
 
     plt.show(block=False)
-    # plt.pause(0.1)
+    plt.pause(0.1)
 
 
 def plot_single(global_latency):
