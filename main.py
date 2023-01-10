@@ -1,7 +1,7 @@
 # ALGORITHM FOR main.py
 from server import MECServer
 from edgeDevice import EdgeDevice
-from helper import plot, plot_single
+from helper import plot
 from agent import Agent
 from copy import deepcopy
 import numpy as np
@@ -200,12 +200,7 @@ while time_step < 1000:
                     )
                 global_task_drop_rate.append(prev_reward)
                 global_reward_sum.append(sum(global_task_drop_rate))
-                plot(
-                    global_reward_sum,
-                    global_running,
-                    global_energy_running,
-                    global_latency_running,
-                )
+
             else:
                 global_dropped.append(0)
 
@@ -230,5 +225,10 @@ while time_step < 1000:
         )
 
     time_step += 1
-
+plot(
+    global_reward_sum,
+    global_running,
+    global_energy_running,
+    global_latency_running,
+)
 # Calculate drop rate
