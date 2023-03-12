@@ -23,6 +23,8 @@ for _ in range(0, NUMBER_OF_MOBILE_DEVICES):
     )
 
 # initialise server and devices
+offloads = 0
+locals = 0
 tasks_generated = 0
 time_step = 0
 tasks_dropped = 0
@@ -42,7 +44,7 @@ global_energy_running = []
 prev_state = [0, 0]
 prev_reward = 0
 prev_action = 0
-while time_step < 1000:
+while time_step < 10000:
     time_array.append(time_step)
     new_tasks = 0
     drop = 0
@@ -65,7 +67,7 @@ while time_step < 1000:
             agent.update(
                 prev_state,
                 prev_action,
-                prev_reward * 10,
+                prev_reward,
                 result[5],
             )
             prev_state = deepcopy(result[5])
@@ -73,6 +75,7 @@ while time_step < 1000:
             if result[1]:  # If Offload
                 # print(result)
                 prev_action = 1
+                offloads += 1
                 global_upload_latency.append(result[2].upload_latency)
                 server_result = server.offload(
                     result[2], result[2].upload_latency + time_step
@@ -120,11 +123,12 @@ while time_step < 1000:
                     )
 
             else:  # if not offload
+                locals += 1
                 prev_action = 0
                 new_latency += result[2]
                 global_latency.append(result[2])
                 global_local_latency.append(result[4])
-                if result[3]:  # Droop
+                if result[3]:  # Drop
                     drop += 1
                     global_dropped.append(1)
                     print(
@@ -226,4 +230,10 @@ plot(
     global_energy_running,
     global_latency_running,
 )
+print("Local : ", locals)
+print("Offloaded : ", offloads)
+print("Total : ", (locals + offloads))
+print("Mean Latency : ", sum(global_latency) / 1000)
+print("Mean Energy : ", sum(global_energy) / 1000)
+print("Total Drop Rate : ", sum(global_dropped) / sum(global_generated))
 # Calculate drop rate

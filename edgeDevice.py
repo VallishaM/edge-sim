@@ -60,8 +60,8 @@ class EdgeDevice:
         server = self.server.compute_delay() + self.server.execution_time(task)
         process_local = self.compute_delay("P") + self.execution_time(task)
         state = [
-            round(task.task_size / 10**6) - 3,
-            round((task.task_timeout - 16) / 2),
+            round(task.task_size / 10**6),
+            round((task.task_timeout)),
         ]
 
         return state
