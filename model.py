@@ -24,7 +24,7 @@ class Linear_QNet(nn.Module):
         x = self.linear2(x)
         return x
 
-    def save(self, file_name="model.pth"):
+    def save(self, file_name="model.pt"):
         model_folder_path = "./model"
         if not os.path.exists(model_folder_path):
             os.makedirs(model_folder_path)
@@ -39,6 +39,7 @@ class QTrainer:
         self.lr = lr
         self.optimiser = optim.Adam(model.parameters(), lr=self.lr)
         self.criterion = nn.MSELoss()
+        self.loss = []
 
     def train_step(self, state, action, reward, next_state):
         state = torch.tensor(state, dtype=torch.float)
@@ -57,9 +58,7 @@ class QTrainer:
         pred = self.model(state)
         target = pred.clone()
         for idx in range(len(target)):
-            Q_new = reward[idx]
-            if True:
-                Q_new = reward[idx] + self.gamma * torch.max(
+            Q_new = reward[idx] + self.gamma * torch.max(
                     self.model(next_state[idx])
                 )
             target[idx][torch.argmax(action[idx]).item()] = Q_new
@@ -70,5 +69,6 @@ class QTrainer:
 
         self.optimiser.zero_grad()
         loss = self.criterion(target, pred)
+        self.loss.append(loss.data.item())
         loss.backward()
         self.optimiser.step()

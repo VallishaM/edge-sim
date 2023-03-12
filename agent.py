@@ -2,6 +2,8 @@ import random
 import torch
 import random
 import numpy as np
+import os
+from pathlib import Path
 
 from collections import deque
 from model import Linear_QNet, QTrainer
@@ -22,8 +24,11 @@ class Agent:
         self.time_step = 0
         self.epsilon = 5  # randomness
         self.gamma = 0.99  # discount rate
-        # self.memory = deque(maxlen=MAX_MEM) #popleft()
+        # self.memory = deque(maxlen=MAX_MEM) #popleft()    
         self.model = Linear_QNet(2, 256, 2)  # input,hidden,output
+        if os.path.exists("./model/model.pt"):
+            self.model.load_state_dict(torch.load('./model/model.pt'))
+            self.model.eval()
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
     def get_state(self, state):
@@ -67,5 +72,5 @@ class Agent:
             state0 = torch.tensor(state, dtype=torch.float)
             prediction = self.model(state0)
             final_move = torch.argmax(prediction).item()
-            print("Action : ", final_move)
+            # print("Action : ", final_move)
         return final_move

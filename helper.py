@@ -5,7 +5,7 @@ plt.ion()
 
 
 def plot(
-    global_task_drop_rate, global_running, global_energy_running, global_latency_running
+    global_task_drop_rate, global_running, global_energy_running, global_latency_running,global_losses
 ):
     display.clear_output(wait=True)
     display.display(plt.gcf())
@@ -82,3 +82,20 @@ def plot(
 
     # plt.show(block=True)
     # plt.pause(0.1)
+
+    plt.figure(5)
+    plt.clf()
+    plt.title("Neural Network Loss")
+    plt.xlabel("Iterations")
+    plt.ylabel("MSE Loss")
+    # plt.plot(global_latency, color="y", label="Total Latency")
+    plt.plot(global_losses, color="b")
+
+    # plt.text(len(global_latency) - 1, global_latency[-1], str(global_latency[-1]))
+    plt.text(
+        len(global_losses) - 1,
+        global_losses[-1],
+        str(global_losses[-1]),
+    )
+
+    plt.savefig("./results/neural_network_losses.png")
