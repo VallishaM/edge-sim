@@ -62,6 +62,9 @@ class EdgeDevice:
         state = [
             round(task.task_size / 10**6),
             round((task.task_timeout)),
+            round(upload),
+            round(server),
+            round(process_local),
         ]
 
         return state
