@@ -1,6 +1,8 @@
 import math
 from numpy import random
 
+random.seed(763)
+
 
 class Task:
     def __init__(self, task_size, timeout, cycles_per_bit, start_time):
@@ -40,6 +42,7 @@ class EdgeDevice:
         state = self.get_state(task)
         decision = self.agent.get_action(state, t)
         # d = [True, False]
+        return (False, state)  # if random.random() < 0.5 else (False, state)
         return (True, state) if decision == 1 else (False, state)
 
     def execution_time(self, task: Task) -> int:
@@ -60,8 +63,8 @@ class EdgeDevice:
         server = self.server.compute_delay() + self.server.execution_time(task)
         process_local = self.compute_delay("P") + self.execution_time(task)
         state = [
-            round(task.task_size / 10**6),
-            round((task.task_timeout)),
+            round(task.task_size / 10**6) - 3,
+            round((task.task_timeout - 16) / 2),
         ]
 
         return state
