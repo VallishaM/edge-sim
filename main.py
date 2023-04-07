@@ -40,10 +40,12 @@ global_dropped = []
 global_running = []
 global_energy = []
 global_energy_running = []
+drop_offload = 0
+drop_local = 0
 prev_state = [0, 0]
 prev_reward = 0
 prev_action = 0
-while time_step < 1000:
+while time_step < 5000:
     time_array.append(time_step)
     new_tasks = 0
     drop = 0
@@ -91,7 +93,7 @@ while time_step < 1000:
                 global_latency.append(server_result[1] + result[2].upload_latency)
 
                 latency_reward = (
-                    1 if (server_result[1] + result[2].upload_latency) < 16 else -1
+                    1 if (server_result[1] + result[2].upload_latency) < 20 else -1
                 )
                 energy_reward = (
                     1
@@ -101,10 +103,11 @@ while time_step < 1000:
                         * 0.001
                         * 6.87
                     )
-                    < 182
+                    < 0.5
                     else -1
                 )
                 if server_result[0]:  #  drop
+                    drop_offload += 1
                     drop += 1
                     drop_reward = -1
                     global_dropped.append(1)
@@ -143,10 +146,11 @@ while time_step < 1000:
                 prev_action = 0
                 new_latency += result[2]
                 global_latency.append(result[2])
-                latency_reward = 1 if (result[2]) < 16 else -1
+                latency_reward = 1 if (result[2]) < 12 else -1
                 global_local_latency.append(result[4])
-                energy_reward = 1 if (result[2] * 350 * 0.05) < 182 else -1
+                energy_reward = 1 if (result[2] * 350 * 0.05) < 160 else -1
                 if result[3]:  # Droop
+                    drop_local += 1
                     drop += 1
                     global_dropped.append(1)
                     print(
@@ -167,14 +171,14 @@ while time_step < 1000:
                     else:
                         global_upload_latency.append(0)
                         global_process_latency.append(0)
-            weights = [1 for _ in range(3)]
+            weights = [random.random() for _ in range(3)]
             sum_of_weights = sum(weights)
-            # weights = [w / sum_of_weights for w in weights]
+            weights = [w / sum_of_weights for w in weights]
             rewards = [energy_reward, latency_reward, drop_reward]
             prev_reward = 0
             for i in range(3):
                 prev_reward += rewards[i] * weights[i]
-
+            # prev_reward = energy_reward
             print(
                 "New Latency : ",
                 new_latency,
@@ -190,12 +194,12 @@ while time_step < 1000:
                 global_running.append(
                     sum(
                         global_dropped[
-                            max(0, len(global_dropped) - 30) : len(global_dropped)
+                            max(0, len(global_dropped) - 500) : len(global_dropped)
                         ]
                     )
                     / sum(
                         global_generated[
-                            max(0, len(global_generated) - 30) : len(global_generated)
+                            max(0, len(global_generated) - 500) : len(global_generated)
                         ]
                     )
                 )
@@ -209,14 +213,14 @@ while time_step < 1000:
                 global_energy_running.append(
                     sum(
                         global_energy[
-                            max(0, len(global_energy) - 30) : len(global_energy)
+                            max(0, len(global_energy) - 500) : len(global_energy)
                         ]
                     )
                 )
                 global_latency_running.append(
                     sum(
-                        global_energy[
-                            max(0, len(global_latency_running) - 30) : len(
+                        global_latency[
+                            max(0, len(global_latency_running) - 500) : len(
                                 global_latency_running
                             )
                         ]
@@ -233,6 +237,10 @@ while time_step < 1000:
 
     if tasks_generated > 0:
         print(
+            "Local Drop : ",
+            drop_local,
+            "Offload Drop : ",
+            drop_offload,
             "Total Offloaded : ",
             total_action,
             "Mean Latency : ",
@@ -246,10 +254,10 @@ while time_step < 1000:
             "Rate : ",
             round(tasks_dropped / tasks_generated, 4),
             "Running Rate = ",
-            sum(global_dropped[max(0, len(global_dropped) - 30) : len(global_dropped)])
+            sum(global_dropped[max(0, len(global_dropped) - 500) : len(global_dropped)])
             / sum(
                 global_generated[
-                    max(0, len(global_generated) - 30) : len(global_generated)
+                    max(0, len(global_generated) - 500) : len(global_generated)
                 ]
             ),
         )

@@ -4,7 +4,7 @@ import math
 class MECServer:
     def __init__(self):
         # primary storage capacity, secondary storage capacity, latency from secondary storage to primary, processor clock cycle
-        self.CLOCK_CYCLES = 0.1 * 10**9  # 41.8ghz
+        self.CLOCK_CYCLES = 0.1 * 10**10  # 41.8ghz
         self.STORAGE_SIZE = 15360000000000 * 8  # 15.36 TB
         self.MEMORY_SIZE = 64000000000 * 8
         self.STORAGE_RATE = 1600000 * 8  # 1.6GBps

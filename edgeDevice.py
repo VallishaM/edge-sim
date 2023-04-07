@@ -42,7 +42,7 @@ class EdgeDevice:
         state = self.get_state(task)
         decision = self.agent.get_action(state, t)
         # d = [True, False]
-        return (False, state)  # if random.random() < 0.5 else (False, state)
+        # return (False, state) if random.random() < 0.5 else (False, state)
         return (True, state) if decision == 1 else (False, state)
 
     def execution_time(self, task: Task) -> int:
