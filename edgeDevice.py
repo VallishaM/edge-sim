@@ -27,9 +27,8 @@ class EdgeDevice:
     def generate_task(self, start_time):
         prob = random.choice(a=[0, 1], p=[0.7, 0.3])
         if prob == 1:
-            task_size = random.randint(30, 80) * 10**5  # 20 megabits to 50 megabits
-            task_timeout = random.randint(16, 24)
-
+            task_size = random.randint(3, 5) * 10**6  # 20 megabits to 50 megabits
+            task_timeout = random.randint(12, 18)
             cycles_per_bit = random.randint(28, 32) / 100
             return Task(task_size, task_timeout, cycles_per_bit, start_time)
         else:

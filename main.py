@@ -28,7 +28,7 @@ prev_state = [0, 0, 0, 0, 0]
 prev_reward = 0
 prev_action = 0
 
-NUMBER_OF_MOBILE_DEVICES = 10
+NUMBER_OF_MOBILE_DEVICES = 5
 offload_dictionary = {}
 global_result = []
 
@@ -40,7 +40,7 @@ for _ in range(0, NUMBER_OF_MOBILE_DEVICES):
         EdgeDevice(14 * 10**3, 2.5 * 10**6, 4200 * 8 * (10**3), Agent(), server)
     )
 
-while time_step < 10000:
+while time_step < 1000:
     time_array.append(time_step)
     new_tasks = 0
     drop = 0
@@ -78,7 +78,7 @@ while time_step < 10000:
                 global_latency.append(server_result[1] + result[2].upload_latency)
                 if server_result[0]:  #  drop
                     drop += 1
-                    prev_reward += -1
+                    prev_reward = -1
                     global_dropped.append(1)
                     print(
                         "Offload and drop, energy:",
@@ -96,7 +96,7 @@ while time_step < 10000:
                         * 6.87
                     )
                 else:  # Successfully processable
-                    prev_reward += 1
+                    prev_reward = 1
                     global_dropped.append(0)
                     print(
                         "Offload",
@@ -123,9 +123,9 @@ while time_step < 10000:
                         "Local and drop, energy:", result[2] * 350 * 0.05
                     )  # in milli Joule
                     global_energy.append(result[2] * 350 * 0.05)
-                    prev_reward += -1
+                    prev_reward = -1
                 else:
-                    prev_reward += 1
+                    prev_reward = 1
                     global_dropped.append(0)
                     print("Local : ", result[2], "energy : ", result[2] * 0.05 * 350)
                     global_energy.append(result[2] * 0.05 * 350)
@@ -161,12 +161,12 @@ while time_step < 10000:
                 global_running.append(
                     sum(
                         global_dropped[
-                            max(0, len(global_dropped) - 30) : len(global_dropped)
+                            max(0, len(global_dropped) - 500) : len(global_dropped)
                         ]
                     )
                     / sum(
                         global_generated[
-                            max(0, len(global_generated) - 30) : len(global_generated)
+                            max(0, len(global_generated) - 500) : len(global_generated)
                         ]
                     )
                 )
@@ -180,14 +180,14 @@ while time_step < 10000:
                 global_energy_running.append(
                     sum(
                         global_energy[
-                            max(0, len(global_energy) - 30) : len(global_energy)
+                            max(0, len(global_energy) - 500) : len(global_energy)
                         ]
                     )
                 )
                 global_latency_running.append(
                     sum(
                         global_energy[
-                            max(0, len(global_latency_running) - 30) : len(
+                            max(0, len(global_latency_running) - 500) : len(
                                 global_latency_running
                             )
                         ]
@@ -203,8 +203,8 @@ while time_step < 10000:
     tasks_generated += new_tasks
     time_step += 1
 
-    # Replay memory every 100 time steps
-    if time_step % 100 == 0:
+    # Replay memory every 50 time steps
+    if time_step % 50 == 0:
         for device in devices:
             device.agent.train_long_memory()
 

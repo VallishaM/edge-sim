@@ -36,7 +36,7 @@ class QTrainer:
         self.criterion = nn.MSELoss()
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimiser, 'min')
 
-    def train_step(self, state, action, reward, next_state, done=False):
+    def train_step(self, state, action, reward, next_state):
         state = torch.tensor(state, dtype=torch.float)
         action = torch.tensor(action, dtype=torch.long)
         reward = torch.tensor(reward, dtype=torch.float)
@@ -52,10 +52,11 @@ class QTrainer:
         # 1: predicted Q values with current state
         pred = self.model(state)
         target = pred.clone()
+        if len(next_state) > 1:
+            pass
         for idx in range(len(next_state)):
             Q_new = reward[idx]
-            if not done:
-                Q_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx]))
+            Q_new = max(Q_new, reward[idx] + self.gamma * torch.max(self.model(next_state[idx])))
             target[idx][action[idx].item()] = Q_new
 
         # 2: Q_newr=+y*max(next_predicted Q value) -> only do this if not done

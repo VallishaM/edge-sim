@@ -27,7 +27,7 @@ class Agent:
         else:
             mini_sample = self.memory
         states, actions, rewards, next_states = zip(*mini_sample)
-        self.trainer.train_step(states, actions, rewards, next_states, True)
+        self.trainer.train_step(states, actions, rewards, next_states)
 
     def train_short_memory(self, state, action, reward, next_state):
         self.trainer.train_step(state, action, reward, next_state)
