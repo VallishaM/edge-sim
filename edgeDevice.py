@@ -1,9 +1,6 @@
 import math
 from numpy import random
 
-random.seed(763)
-
-
 class Task:
     def __init__(self, task_size, timeout, cycles_per_bit, start_time):
         self.task_size = task_size  # Number of bits
@@ -29,20 +26,17 @@ class EdgeDevice:
     def generate_task(self, start_time):
         prob = random.choice(a=[0, 1], p=[0.7, 0.3])
         if prob == 1:
-            task_size = random.randint(30, 80) * 10**5  # 20 megabits to 50 megabits
-            task_timeout = random.randint(16, 24)
-
+            task_size = random.randint(3, 5) * 10**6  # 20 megabits to 50 megabits
+            task_timeout = random.randint(12, 18)
             cycles_per_bit = random.randint(28, 32) / 100
             return Task(task_size, task_timeout, cycles_per_bit, start_time)
         else:
             return None
 
     def policy(self, task: Task, t) -> bool:
-
         state = self.get_state(task)
         decision = self.agent.get_action(state, t)
         # d = [True, False]
-        # return (False, state) if random.random() < 0.5 else (False, state)
         return (True, state) if decision == 1 else (False, state)
 
     def execution_time(self, task: Task) -> int:
@@ -55,7 +49,6 @@ class EdgeDevice:
     def upload_time(self, task: Task) -> int:
         up_time = task.task_size * 1 / self.uplink_speed
         upload_timestep = int(math.ceil(up_time / 100))
-
         return upload_timestep
 
     def get_state(self, task):
@@ -63,10 +56,12 @@ class EdgeDevice:
         server = self.server.compute_delay() + self.server.execution_time(task)
         process_local = self.compute_delay("P") + self.execution_time(task)
         state = [
-            round(task.task_size / 10**6) - 3,
-            round((task.task_timeout - 16) / 2),
+            round(task.task_size / 10**6),
+            round((task.task_timeout)),
+            round(upload),
+            round(server),
+            round(process_local),
         ]
-
         return state
 
     def poll(self, timestep):

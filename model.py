@@ -5,23 +5,18 @@ import torch.nn.functional as F
 import os
 
 
-class Linear_QNet(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
+class DeepQNetwork(nn.Module):
+    def __init__(self, input_size, output_size):
         super().__init__()
 
-        def init_weights(m):
-            if isinstance(m, nn.Linear):
-                torch.nn.init.xavier_uniform(m.weight)
-                m.bias.data.fill_(0.01)
-
-        self.linear1 = nn.Linear(input_size, hidden_size)
-        self.linear2 = nn.Linear(hidden_size, output_size)
-        net = nn.Sequential(self.linear1, self.linear2)
-        net.apply(init_weights)
+        self.linear1 = nn.Linear(input_size, 32)
+        self.linear2 = nn.Linear(32, 128)
+        self.linear3 = nn.Linear(128, output_size)
 
     def forward(self, x):
         x = F.relu(self.linear1(x))
-        x = self.linear2(x)
+        x = F.relu(self.linear2(x))
+        x = self.linear3(x)
         return x
 
     def save(self, file_name="model.pth"):
@@ -33,12 +28,14 @@ class Linear_QNet(nn.Module):
 
 
 class QTrainer:
-    def __init__(self, model, lr, gamma):
+    def __init__(self, model, lr, gamma, alpha):
         self.model = model
         self.gamma = gamma
+        self.alpha = alpha
         self.lr = lr
         self.optimiser = optim.Adam(model.parameters(), lr=self.lr)
         self.criterion = nn.MSELoss()
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimiser, 'min')
 
     def train_step(self, state, action, reward, next_state):
         state = torch.tensor(state, dtype=torch.float)
@@ -56,13 +53,12 @@ class QTrainer:
         # 1: predicted Q values with current state
         pred = self.model(state)
         target = pred.clone()
-        for idx in range(len(target)):
+        if len(next_state) > 1:
+            pass
+        for idx in range(len(next_state)):
             Q_new = reward[idx]
-            if True:
-                Q_new = reward[idx] + self.gamma * torch.max(
-                    self.model(next_state[idx])
-                )
-            target[idx][torch.argmax(action[idx]).item()] = Q_new
+            Q_new = max(Q_new, reward[idx] + self.gamma * torch.max(self.model(next_state[idx])))
+            target[idx][action[idx].item()] = Q_new
 
         # 2: Q_newr=+y*max(next_predicted Q value) -> only do this if not done
         # pred.clone()
@@ -71,4 +67,4 @@ class QTrainer:
         self.optimiser.zero_grad()
         loss = self.criterion(target, pred)
         loss.backward()
-        self.optimiser.step()
+        self.scheduler.step(loss)

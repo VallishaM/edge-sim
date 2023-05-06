@@ -6,26 +6,12 @@ from agent import Agent
 from copy import deepcopy
 import numpy as np
 import random
+import numpy as np
 
-
-# from tabulate import tabulate
-
-NUMBER_OF_MOBILE_DEVICES = 3
-offload_dictionary = {}
-global_result = []
-agent = Agent()
-# initialise server and devices
-server = MECServer()
-devices = []
-for _ in range(0, NUMBER_OF_MOBILE_DEVICES):
-    devices.append(
-        EdgeDevice(14 * 10**3, 2.5 * 10**6, 4200 * 8 * (10**3), agent, server)
-    )
-
-# initialise server and devices
+offloads = 0
+locals = 0
 tasks_generated = 0
 time_step = 0
-total_action = 0
 tasks_dropped = 0
 global_latency = []
 time_array = []
@@ -40,11 +26,22 @@ global_dropped = []
 global_running = []
 global_energy = []
 global_energy_running = []
-drop_offload = 0
-drop_local = 0
-prev_state = [0, 0]
+prev_state = [0, 0, 0, 0, 0]
 prev_reward = 0
 prev_action = 0
+
+NUMBER_OF_MOBILE_DEVICES = 5
+offload_dictionary = {}
+global_result = []
+
+# initialise server and devices
+server = MECServer()
+devices = []
+for _ in range(0, NUMBER_OF_MOBILE_DEVICES):
+    devices.append(
+        EdgeDevice(14 * 10**3, 2.5 * 10**6, 4200 * 8 * (10**3), Agent(), server)
+    )
+
 while time_step < 5000:
     time_array.append(time_step)
     new_tasks = 0
@@ -65,20 +62,13 @@ while time_step < 5000:
         if result[0]:  # If task generated
             global_generated.append(1)
             new_tasks += 1
-            agent.update(
-                prev_state,
-                prev_action,
-                prev_reward * 10,
-                result[5],
-            )
             prev_state = deepcopy(result[5])
             drop_reward = -1
             energy_reward = -1
             latency_reward = -1
             print("State: ", prev_state)
             if result[1]:  # If Offload
-                # print(result)
-                total_action += 1
+                offloads += 1
                 global_upload_latency.append(result[2].upload_latency)
                 server_result = server.offload(
                     result[2], result[2].upload_latency + time_step
@@ -107,7 +97,6 @@ while time_step < 5000:
                     else -1
                 )
                 if server_result[0]:  #  drop
-                    drop_offload += 1
                     drop += 1
                     drop_reward = -1
                     global_dropped.append(1)
@@ -143,14 +132,14 @@ while time_step < 5000:
                     )
 
             else:  # if not offload
+                locals += 1
                 prev_action = 0
                 new_latency += result[2]
                 global_latency.append(result[2])
                 latency_reward = 1 if (result[2]) < 12 else -1
                 global_local_latency.append(result[4])
                 energy_reward = 1 if (result[2] * 350 * 0.05) < 160 else -1
-                if result[3]:  # Droop
-                    drop_local += 1
+                if result[3]:  # Drop
                     drop += 1
                     global_dropped.append(1)
                     print(
@@ -171,6 +160,7 @@ while time_step < 5000:
                     else:
                         global_upload_latency.append(0)
                         global_process_latency.append(0)
+
             weights = [random.random() for _ in range(3)]
             sum_of_weights = sum(weights)
             weights = [w / sum_of_weights for w in weights]
@@ -178,7 +168,9 @@ while time_step < 5000:
             prev_reward = 0
             for i in range(3):
                 prev_reward += rewards[i] * weights[i]
-            # prev_reward = energy_reward
+
+            device.agent.update(prev_state, prev_action, prev_reward, result[5])
+
             print(
                 "New Latency : ",
                 new_latency,
@@ -190,7 +182,6 @@ while time_step < 5000:
                 round(drop / new_tasks, 4),
             )
             try:
-
                 global_running.append(
                     sum(
                         global_dropped[
@@ -234,35 +225,21 @@ while time_step < 5000:
 
     tasks_dropped += drop
     tasks_generated += new_tasks
-
-    if tasks_generated > 0:
-        print(
-            "Local Drop : ",
-            drop_local,
-            "Offload Drop : ",
-            drop_offload,
-            "Total Offloaded : ",
-            total_action,
-            "Mean Latency : ",
-            round(sum(global_latency) / tasks_generated, 4),
-            "Mean Energy : ",
-            round(sum(global_energy) / tasks_generated, 4),
-            "Total Tasks : ",
-            tasks_generated,
-            "Total Drop : ",
-            tasks_dropped,
-            "Rate : ",
-            round(tasks_dropped / tasks_generated, 4),
-            "Running Rate = ",
-            sum(global_dropped[max(0, len(global_dropped) - 500) : len(global_dropped)])
-            / sum(
-                global_generated[
-                    max(0, len(global_generated) - 500) : len(global_generated)
-                ]
-            ),
-        )
-
     time_step += 1
+
+    # Replay memory after every 50 time steps
+    if time_step % 50 == 0:
+        for device in devices:
+            device.agent.train_long_memory()
+
+print("Total Tasks Generated: ", tasks_generated)
+print("Total Tasks Dropped :", tasks_dropped)
+print("Local : ", locals)
+print("Offloaded : ", offloads)
+print("Mean Latency : ", sum(global_latency) / 1000)
+print("Mean Energy : ", sum(global_energy) / 1000)
+print("Total Drop Rate : ", sum(global_dropped) / sum(global_generated))
+
 plot(
     global_reward_sum,
     global_running,
