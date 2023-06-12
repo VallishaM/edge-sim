@@ -4,18 +4,27 @@ import numpy as np
 from collections import deque
 from model import DeepQNetwork, QTrainer
 from helper import plot
+import os
 
 MAX_MEM = 100_000
 BATCH_SIZE = 1000
 LR = 0.01
 
 class Agent:
-    def __init__(self):
+    def __init__(self,type):
         self.alpha = 0.01
         self.gamma = 0.99
         self.epsilon = 10
         self.memory = deque(maxlen=MAX_MEM) #popleft()
-        self.model = DeepQNetwork(5, 2)  # input,output
+        self.type = type
+        if type == "SORL" and os.path.exists('./model/model-SORL.pt'):
+            self.model =  torch.load('./model/model-SORL.pt')
+            self.model.eval()
+        elif type == "MORL" and os.path.exists('./model/model-MORL.pt'):
+            self.model =  torch.load('./model/model-MORL.pt')
+            self.model.eval()
+        else:
+            self.model = DeepQNetwork(5, 2)  # input,output
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma, alpha=self.alpha)
 
     def remember(self, state, action, reward, next_state):
@@ -45,6 +54,9 @@ class Agent:
             state0 = torch.tensor(state, dtype=torch.float)
             prediction = self.model(state0)
             final_move = torch.argmax(prediction).item()
-            print("Action : ", final_move)
+            # print("Action : ", final_move)
 
         return final_move
+    
+    def save(self):
+        self.model.save(file_name="model-"+self.type+".pt")

@@ -1,6 +1,8 @@
 import math
 from numpy import random
 
+# random.seed(763)
+
 class Task:
     def __init__(self, task_size, timeout, cycles_per_bit, start_time):
         self.task_size = task_size  # Number of bits
@@ -38,6 +40,7 @@ class EdgeDevice:
         decision = self.agent.get_action(state, t)
         # d = [True, False]
         return (True, state) if decision == 1 else (False, state)
+        # return (True, state) if random.randint(0,2) == 1 else (False, state)
 
     def execution_time(self, task: Task) -> int:
         latency = (task.task_size * 1 / self.bus_speed) * 1000 + (
