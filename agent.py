@@ -1,6 +1,6 @@
 import random
 
-random.seed(763)
+# random.seed(763)
 
 
 class Agent:
@@ -53,5 +53,5 @@ class Agent:
             final_move = max(
                 enumerate(self.table[state[0]][state[1]]), key=lambda x: x[1]
             )[0]
-            print("Action : ", final_move)
+            # print("Action : ", final_move)
         return final_move
