@@ -7,6 +7,7 @@ from copy import deepcopy
 import numpy as np
 import random
 import numpy as np
+
 def run(episode):
     offloads = 0
     locals = 0
@@ -39,7 +40,7 @@ def run(episode):
     # initialise server and devices
     server = MECServer()
     devices = []
-    agent = Agent("SORL")
+    agent = Agent("DMORL")
     for _ in range(0, NUMBER_OF_MOBILE_DEVICES):
         devices.append(
             EdgeDevice(14 * 10**3, 2.5 * 10**6, 4200 * 8 * (10**3), agent, server)
@@ -104,16 +105,6 @@ def run(episode):
                         drop += 1
                         drop_reward = -1
                         global_dropped.append(1)
-                        # print(
-                        #     "Offload and drop, energy:",
-                        #     (result[2].upload_latency + server_result[1])
-                        #     * 0.05
-                        #     * 0.001
-                        #     * 6.87,
-                        #     "Upload latency",
-                        #     result[2].upload_latency,
-                        # )
-
                         global_energy.append(
                             (result[2].upload_latency + server_result[1])
                             * 0.05
@@ -123,14 +114,6 @@ def run(episode):
                     else:  # Successfully processable
                         drop_reward = 1
                         global_dropped.append(0)
-                        # print(
-                        #     "Offload",
-                        #     server_result[1] + result[2].upload_latency,
-                        #     "energy:",
-                        #     (server_result[1] + result[2].upload_latency) * 0.05 * 6.87,
-                        #     "Upload latency",
-                        #     result[2].upload_latency,
-                        # )
                         global_energy.append(
                             (server_result[1] + result[2].upload_latency) * 0.05 * 6.87
                         )
@@ -171,21 +154,10 @@ def run(episode):
                 weights = [w / sum_of_weights for w in weights]
                 rewards = [energy_reward, latency_reward, drop_reward]
                 prev_reward = 0
-                # for i in range(3):
-                #     prev_reward += rewards[i] * weights[i]
-                prev_reward = drop_reward
-                device.agent.update(prev_state, prev_action, prev_reward, result[5])
+                for i in range(3):
+                    prev_reward += rewards[i] * weights[i]
 
-                # print(
-                #     "New Latency : ",
-                #     new_latency,
-                #     "New Tasks : ",
-                #     new_tasks,
-                #     "New Drop : ",
-                #     drop,
-                #     "Rate : ",
-                #     round(drop / new_tasks, 4),
-                # )
+                device.agent.update(prev_state, prev_action, prev_reward, result[5])
                 try:
                     global_running.append(
                         sum(
@@ -232,36 +204,30 @@ def run(episode):
         tasks_generated += new_tasks
         time_step += 1
 
-        # Replay memory after every 50 time steps
-        if time_step % 50 == 0:
-            for device in devices:
-                device.agent.train_long_memory()
-
     # import pandas as pd
     # pd.DataFrame({"Reward": global_reward_sum, "Running Drop Rate": global_running, "Running Energy": global_energy_running, "Running Latency": global_latency_running}).to_csv('./MORL-Deep.csv')
 
     agent.save()
 
-    print("===SORL-Deep===")
     print("Number of Episodes: ",episode)
     print("Total Tasks Generated: ", tasks_generated)
     print("Total Tasks Dropped :", tasks_dropped)
     print("Local : ", locals)
     print("Offloaded : ", offloads)
-    print("Mean Latency : ", sum(global_latency) / 3000)
-    print("Mean Energy : ", sum(global_energy) / 3000)
+    print("Mean Latency : ", sum(global_latency) / episode)
+    print("Mean Energy : ", sum(global_energy) / episode)
     print("Total Drop Rate : ", sum(global_dropped) / sum(global_generated))
     print("Local drop:",local_drop)
     print("Offload drop:",offload_drop)
-    # plot(
-    #     global_reward_sum,
-    #     global_running,
-    #     global_energy_running,
-    #     global_latency_running,
-    # )
-    # Calculate drop rate
+    print()
+    plot(
+        global_reward_sum,
+        global_running,
+        global_energy_running,
+        global_latency_running,
+    )
 
 episodes=[100,500,1000,1500,2000]
 
-# for episode in episodes:
-run(500)
+for i in range(10):
+    run(3000)

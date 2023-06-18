@@ -38,9 +38,7 @@ class EdgeDevice:
     def policy(self, task: Task, t) -> bool:
         state = self.get_state(task)
         decision = self.agent.get_action(state, t)
-        # d = [True, False]
         return (True, state) if decision == 1 else (False, state)
-        # return (True, state) if random.randint(0,2) == 1 else (False, state)
 
     def execution_time(self, task: Task) -> int:
         latency = (task.task_size * 1 / self.bus_speed) * 1000 + (
