@@ -40,7 +40,7 @@ def run(episode):
     # initialise server and devices
     server = MECServer()
     devices = []
-    agent = Agent("DMORL")
+    agent = Agent("DDPG")
     for _ in range(0, NUMBER_OF_MOBILE_DEVICES):
         devices.append(
             EdgeDevice(14 * 10**3, 2.5 * 10**6, 4200 * 8 * (10**3), agent, server)
@@ -156,8 +156,7 @@ def run(episode):
                 prev_reward = 0
                 for i in range(3):
                     prev_reward += rewards[i] * weights[i]
-
-                device.agent.update(prev_state, prev_action, prev_reward, result[5])
+                device.agent.update(prev_state, prev_action, prev_reward, result[5], time_step)
                 try:
                     global_running.append(
                         sum(
@@ -205,7 +204,7 @@ def run(episode):
         time_step += 1
 
     # import pandas as pd
-    # pd.DataFrame({"Reward": global_reward_sum, "Running Drop Rate": global_running, "Running Energy": global_energy_running, "Running Latency": global_latency_running}).to_csv('./MORL-Deep.csv')
+    # pd.DataFrame({"Reward": global_reward_sum, "Running Drop Rate": global_running, "Running Energy": global_energy_running, "Running Latency": global_latency_running}).to_csv('./DDPG.csv')
 
     agent.save()
 

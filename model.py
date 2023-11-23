@@ -11,12 +11,12 @@ class DeepQNetwork(nn.Module):
 
         self.linear1 = nn.Linear(input_size, 32)
         self.linear2 = nn.Linear(32, 128)
-        self.linear3 = nn.Linear(128, output_size)
+        self.linear4 = nn.Linear(128, output_size)
 
     def forward(self, x):
         x = F.relu(self.linear1(x))
         x = F.relu(self.linear2(x))
-        x = self.linear3(x)
+        x = self.linear4(x)
         return x
 
     def save(self, file_name="model.pt"):
