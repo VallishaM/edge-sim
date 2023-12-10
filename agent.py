@@ -6,6 +6,8 @@ from helper import plot
 import os
 import torch.nn.functional as F
 
+random.seed(763)
+
 MAX_MEM = 100_000
 BATCH_SIZE = 1000
 LR = 0.001
@@ -14,7 +16,7 @@ class Agent:
     def __init__(self,type):
         self.alpha = 0.01
         self.gamma = 0.99
-        self.epsilon = 10
+        self.epsilon = 20
         self.memory = list()
         self.type = type
         self.tau = 0.01
@@ -126,7 +128,7 @@ class Agent:
         final_move = 0
         # Exploration / Exploitation tradeoff
         if random.randint(0, 100) < self.epsilon:
-            final_move = random.randint(0, 1)
+            final_move = 1
         else:
             state0 = torch.tensor(state, dtype=torch.float)
             prediction = self.actor(state0)

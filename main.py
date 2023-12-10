@@ -8,6 +8,8 @@ import numpy as np
 import random
 import numpy as np
 
+random.seed(763)
+
 def run(episode):
     offloads = 0
     locals = 0
@@ -228,5 +230,5 @@ def run(episode):
 
 episodes=[100,500,1000,1500,2000]
 
-for i in range(10):
+for i in range(1):
     run(3000)

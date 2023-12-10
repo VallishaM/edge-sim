@@ -1,7 +1,7 @@
 import math
 from numpy import random
 
-# random.seed(763)
+random.seed(763)
 
 class Task:
     def __init__(self, task_size, timeout, cycles_per_bit, start_time):
